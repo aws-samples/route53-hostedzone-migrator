@@ -1,0 +1,6 @@
+# Definition of global values
+
+MAX_RECORDS=999 # How many records for each JSON (maximum accepted by APIs is 1000)
+MAX_VALUE_SIZE=32000 # Bytes limit for values on single JSON file (maximum accepted by APIs is 32000)
+WORK_DIR="migrations" # Where all the migrations will be stored (inside ZONE_ID directory), including JSON and logs
+LOG_FILE="migration.log" # Log file inside the directory migrations/ZONE_ID/
