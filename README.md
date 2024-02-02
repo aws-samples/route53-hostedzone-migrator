@@ -1,6 +1,7 @@
 # AWS Route 53 Hosted Zone Migrator
 
-This script will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another.
+This script will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another one.
+It will follow all the needed steps published in the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html) regarding the migration of a hosted zone.
 
 ## Prerequisites
 1. **Install or Upgrade AWS CLI:**<br/>
@@ -11,6 +12,29 @@ This script will help you to automate the migration of an AWS Route 53 hosted zo
    make sure AWS CLI is configured for both the source and destination AWS accounts.
 4. **Make sure you have the correct permissions in both accounts:**<br/>
    follow the [Identity and access management in Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/auth-and-access-control.html) to know more.
+<br/>
+
+## How the script works (step by step)
+
+1. It exports original hosted zone records on a JSON file from the source AWS account
+
+2. Creates the new empty hosted zone on the destination account
+
+3. Edits the exported JSON file with the required changes:
+   - removes original SOA and NS records because they are already present in the new hosted zone created in the destination account;
+   - moves all the ALIAS records at the end of the file;
+   - replaces the old HostedZoneID in the ALIAS records which refer to other records in the same zone, with the new HostedZoneID;
+   - removes any alias records that route traffic to a traffic policy instance. Writes the removed records into a JSON file so you can recreate them later.
+
+4. Split the JSON file into multiple JSON files, as required by AWS Route 53 API, if:
+   - DNS records are more than 1000;
+   - the maximum combined length of the values in all Value elements is greater than 32,000 bytes.
+
+5. Imports all the JSON files in the new hosted zone on the AWS destination account
+
+6. If the zone is public, prints the nameservers of the new hosted zone:
+   - to make the new hosted zone active, you have to set up the nameservers of the new hosted zone in the domain configuration.
+
 <br/>
 
 ## Usage example
@@ -85,33 +109,11 @@ ns-****.awsdns-**.net
 ```
 <br/>
 
-After the initial execution, a 'migrations' folder will be generated. Within this folder, you'll discover a nested directory named after the Hosted Zone ID you are currently working with. 
+After the first execution, a 'migrations' folder will be generated. Within this folder, you'll discover a nested directory named after the Hosted Zone ID you are currently working with. 
 Inside, you'll locate both log files and the JSON file(s) generated and utilised by the tool.
 
 <br/>
 
-## How the script works (step by step)
-
-1. It exports original hosted zone records on a JSON file from the source AWS account
-
-2. Creates the new empty hosted zone on the destination account
-
-3. Edits the exported JSON file with the required changes:
-   - removes original SOA and NS records because they are already present in the new hosted zone created in the destination account;
-   - moves all the ALIAS records at the end of the file;
-   - replaces the old HostedZoneID in the ALIAS records which refer to other records in the same zone, with the new HostedZoneID;
-   - removes any alias records that route traffic to a traffic policy instance. Writes the removed records into a JSON file so you can recreate them later.
-
-4. Split the JSON file into multiple JSON files, as required by AWS Route 53 API, if:
-   - DNS records are more than 1000;
-   - the maximum combined length of the values in all Value elements is greater than 32,000 bytes.
-
-5. Imports all the JSON files in the new hosted zone on the AWS destination account
-
-6. If the zone is public, prints the nameservers of the new hosted zone:
-   - to make the new hosted zone active, you have to set up the nameservers of the new hosted zone in the domain configuration.
-
-<br/>
 
 ## Files created by the tool (inside 'migrations/HOSTED_ZONE_ID/' folder)
 
