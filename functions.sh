@@ -62,6 +62,18 @@ check_hosted_zone_name() {
     fi
 }
 
+check_dnssec() {
+    #Check if DNSSEC is enabled on the hosted zone
+        DNSSEC_STATUS=$(if [[ "$(aws --profile "$1" route53 get-dnssec --hosted-zone-id "$2" --query 'Status.ServeSignature' --output text)" == "SIGNING" ]]; then echo "ENABLED"; else echo "DISABLED"; fi)
+        if [ "$DNSSEC_STATUS" == "ENABLED" ]; then
+            log "[WARNING] DNSSEC is enabled on the original hosted zone."
+            log "[WARNING] Reconfigure DNSSEC on the new hosted zone before switching the nameservers."
+            log "[WARNING] Please refer to: "
+            log "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html"
+            log "https://aws.amazon.com/blogs/networking-and-content-delivery/configuring-dnssec-signing-and-validation-with-amazon-route-53/"
+        fi
+}
+
 # Function to extract and convert Route 53 hosted zone
 extract_and_convert_zone() {
     local SOURCE_PROFILE=$1
@@ -185,6 +197,12 @@ extract_and_convert_zone() {
         NUM_RECORDS_AFTER=$(aws --profile "$DEST_PROFILE" route53 list-resource-record-sets --hosted-zone-id "$DEST_HOSTED_ZONE_ID" --output json | jq --arg name "$HOSTED_ZONE_NAME" '.ResourceRecordSets | map(select(.Type!="SOA")|select((.Type!="NS") or (.Name != $name))) | length')
         log "[INFO] New Hosted Zone ID: $NEW_HOSTED_ZONE_ID"
         log "[INFO] Record count: $NUM_RECORDS_AFTER"
+        if [ "$NUM_RECORDS_AFTER" -ne "$NUM_RECORDS_BEFORE" ]; then
+            log "[ERROR] Number of records in the destination hosted zone does not match the original."
+            # Clean up - delete the destination hosted zone
+            aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
+            exit 1
+        fi
         log "[INFO] Hosted zone migration completed successfully."
         echo ""
 
@@ -197,6 +215,8 @@ extract_and_convert_zone() {
             echo "$NEW_NAMESERVERS" | jq -r '.[]'
             echo ""
         fi
+
+
     fi
 }
 

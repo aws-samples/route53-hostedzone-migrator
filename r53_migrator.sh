@@ -75,3 +75,6 @@ check_private_hosted_zone "$HOSTED_ZONE_ID"
 
 # Call the main function to perform the migration
 extract_and_convert_zone "$SOURCE_PROFILE" "$DEST_PROFILE" "$HOSTED_ZONE_ID" "$HOSTED_ZONE_PRIVATE"
+
+# Check DNSSEC configuration
+check_dnssec "$SOURCE_PROFILE" "$HOSTED_ZONE_ID"
