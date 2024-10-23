@@ -36,7 +36,7 @@ check_cmd "jq"
 # Prompt the user for AWS CLI profile names and hosted zone ID
 echo ""
 echo "********************************************************"
-echo "          AWS Route 53 Hosted Zone Migrator             "
+echo "         Amazon Route 53 Hosted Zone Migrator           "
 echo "********************************************************"
 echo ""
 read -p "- Enter AWS CLI profile name for the source AWS account: " SOURCE_PROFILE
@@ -53,7 +53,7 @@ fi
 # Starting logging after the definition of the HOSTED_ZONE_ID
 echo "" >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 echo "********************************************************" >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
-echo "          AWS Route 53 Hosted Zone Migrator             " >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
+echo "         Amazon Route 53 Hosted Zone Migrator           " >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 echo "********************************************************" >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 echo "" >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 
