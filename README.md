@@ -1,4 +1,4 @@
-# AWS Route 53 Hosted Zone Migrator
+# Amazon Route 53 Hosted Zone Migrator
 
 This script will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another one.
 It will follow all the needed steps published in the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html) regarding the migration of a hosted zone.
@@ -11,7 +11,10 @@ It will follow all the needed steps published in the [official AWS Route 53 docu
 3. **Configure profiles for AWS CLI:**<br/>
    make sure AWS CLI is configured for both the source and destination AWS accounts.
 4. **Make sure you have the correct permissions in both accounts:**<br/>
-   follow the [Identity and access management in Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/auth-and-access-control.html) to know more.
+   follow the [Identity and access management in Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/auth-and-access-control.html) to know more.<br>
+   You can use the AmazonRoute53ReadOnlyAccess managed policy on the source account and the AmazonRoute53FullAccess managed policy in the destination account.<br>
+   If you are working on private hosted zones, you will also need to ensure the appropriate VPC-related permissions (such as AmazonVPCFullAccess) are available in the destination account to associate the private zone with a VPC.
+
 <br/>
 
 ## How the script works (step by step)
@@ -67,50 +70,49 @@ Example of normal execution:
 % sh r53_migrator.sh
 
 ********************************************************
-          AWS Route 53 Hosted Zone Migrator             
+        Amazon Route 53 Hosted Zone Migrator             
 ********************************************************
 
-- Enter AWS CLI profile name for the source AWS account: source_account
-- Enter AWS CLI profile name for the destination AWS account: dest_account
-- Enter the Route 53 Hosted Zone ID to migrate: ********************
+- Enter AWS CLI profile name for the source AWS account: source_accountA
+- Enter AWS CLI profile name for the destination AWS account: dest_accountB
+- Enter the Route 53 Hosted Zone ID to migrate: Z02526892************
 
-[ Mon Dec  4 18:37:41 CET 2023 ] [INFO] Checking AWS CLI profiles...
-[ Mon Dec  4 18:37:42 CET 2023 ] [OK] AWS CLI profile 'source_account' exists.
-[ Mon Dec  4 18:37:43 CET 2023 ] [OK] AWS CLI profile 'destination_account' exists.
-[ Mon Dec  4 18:37:43 CET 2023 ] [INFO] Checking Hosted Zone...
-[ Mon Dec  4 18:37:45 CET 2023 ] [OK] Hosted Zone ID '********************' exists in the source account.
-[ Mon Dec  4 18:37:45 CET 2023 ] [INFO] Checking if Hosted Zone is public or private...
-[ Mon Dec  4 18:37:47 CET 2023 ] [INFO] Hosted Zone is public.
-[ Mon Dec  4 18:37:50 CET 2023 ] [INFO] Checking if Hosted Zone name already exists in the destination account...
-[ Mon Dec  4 18:37:52 CET 2023 ] [OK] Hosted Zone Name 'testzone.aws.com.' does not exist in the destination account.
-[ Mon Dec  4 18:37:52 CET 2023 ] -- STARTING MIGRATION FROM source_account to destination_account
-[ Mon Dec  4 18:37:52 CET 2023 ] [INFO] Hosted zone name: testzone.aws.com.
-[ Mon Dec  4 18:37:52 CET 2023 ] [INFO] Found traffic policy records, moving them into migrations/********************/traffic_policy_records.json
-[ Mon Dec  4 18:37:52 CET 2023 ] [OK] Traffic policy records file created.
-[ Mon Dec  4 18:37:52 CET 2023 ] [INFO] Removing traffic policy records from the original JSON file
-[ Mon Dec  4 18:37:52 CET 2023 ] [OK] Original JSON cleaned form traffic policy records.
-[ Mon Dec  4 18:37:52 CET 2023 ] [INFO] Records to import: 8
-[ Mon Dec  4 18:37:55 CET 2023 ] [OK] JSON file migrations/********************/part_1.json created.
-[ Mon Dec  4 18:37:55 CET 2023 ] [INFO] Importing records from migrations/********************/part_1.json...
-[ Mon Dec  4 18:37:57 CET 2023 ] [OK] Import completed
-[ Mon Dec  4 18:37:59 CET 2023 ] [INFO] New Hosted Zone ID: ********************
-[ Mon Dec  4 18:37:59 CET 2023 ] [INFO] Record count: 8
-[ Mon Dec  4 18:37:59 CET 2023 ] [INFO] Hosted zone migration completed successfully.
+[ Tue Oct 22 14:58:20 CEST 2024 ] [INFO] Checking AWS CLI profiles...
+[ Tue Oct 22 14:58:26 CEST 2024 ] [OK] AWS CLI profile 'source_accountA' exists.
+[ Tue Oct 22 14:58:29 CEST 2024 ] [OK] AWS CLI profile 'dest_accountB' exists.
+[ Tue Oct 22 14:58:29 CEST 2024 ] [INFO] Checking Hosted Zone...
+[ Tue Oct 22 14:58:31 CEST 2024 ] [OK] Hosted Zone ID 'Z02526892************' exists in the source account.
+[ Tue Oct 22 14:58:31 CEST 2024 ] [INFO] Checking if Hosted Zone is public or private...
+[ Tue Oct 22 14:58:32 CEST 2024 ] [INFO] Hosted Zone is public.
+[ Tue Oct 22 14:58:35 CEST 2024 ] [INFO] Checking if Hosted Zone name already exists in the destination account...
+[ Tue Oct 22 14:58:37 CEST 2024 ] [OK] Hosted Zone Name 'test.aws.com.' does not exist in the destination account.
+[ Tue Oct 22 14:58:37 CEST 2024 ] -- STARTING MIGRATION FROM source_accountA to dest_accountB
+[ Tue Oct 22 14:58:37 CEST 2024 ] [INFO] Hosted zone name: test.aws.com.
+[ Tue Oct 22 14:58:37 CEST 2024 ] [INFO] Records included: 1016
+[ Tue Oct 22 14:58:38 CEST 2024 ] [INFO] Limit of 999 records reached, splitting JSON: migrations/Z02526892************/part_1.json created.
+[ Tue Oct 22 14:58:38 CEST 2024 ] [INFO] Limit of 999 records reached, splitting JSON: migrations/Z02526892************/part_2.json created.
+[ Tue Oct 22 14:58:39 CEST 2024 ] [INFO] Importing records from migrations/Z02526892************/part_1.json...
+[ Tue Oct 22 14:58:41 CEST 2024 ] [OK] Import completed
+[ Tue Oct 22 14:58:41 CEST 2024 ] [INFO] Importing records from migrations/Z02526892************/part_2.json...
+[ Tue Oct 22 14:58:43 CEST 2024 ] [OK] Import completed
+[ Tue Oct 22 14:58:43 CEST 2024 ] [INFO] New Hosted Zone ID: Z04550442************
+[ Tue Oct 22 14:58:43 CEST 2024 ] [INFO] Record count: 1016
+[ Tue Oct 22 14:58:43 CEST 2024 ] [INFO] Hosted zone migration completed successfully.
 
-** IMPORTANT ** 
+** IMPORTANT **
 Please make sure to setup the new nameservers of the imported zone in your domain configuration:
 
-ns-****.awsdns-**.co.uk
-ns-****.awsdns-**.org
-ns-****.awsdns-**.com
-ns-****.awsdns-**.net
+ns-600.awsdns-11.net
+ns-1503.awsdns-59.org
+ns-2022.awsdns-60.co.uk
+ns-472.awsdns-59.com
 
 %
 ```
 <br/>
 
 After the first execution, a 'migrations' folder will be generated. Within this folder, you'll discover a nested directory named after the Hosted Zone ID you are currently working with. 
-Inside, you'll locate both log files and the JSON file(s) generated and utilised by the tool.
+Inside, you'll locate both log files and the JSON file(s) generated and utilised by the solution.
 
 <br/>
 
