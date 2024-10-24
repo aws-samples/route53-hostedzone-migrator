@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# Function to check if a command is installed
+# Text formatting
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+# Check if a command is installed
 check_cmd() {
     if ! command -v "$1" &> /dev/null; then
         echo "[ $(date) ] [OK] $1 command is not installed. Please install $1 to proceed."
@@ -8,36 +12,36 @@ check_cmd() {
     fi
 }
 
-# Function to log messages
+# Log messages
 log() {
     local message
     message="[ $(date) ] $1"
     echo "$message" | tee -a "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 }
 
-# Function to check if AWS CLI profiles exist
+# Check if AWS CLI profiles exist
 aws_cli_profile_check() {
     if ! aws configure list --profile "$1" &> /dev/null; then
-        log "[ERROR] AWS CLI profile '$1' is incorrect or does not exist."
-        log "[ERROR] Please specify a correct AWS CLI profile name."
+        log "${bold}[ERROR]${normal} AWS CLI profile '$1' is incorrect or does not exist."
+        log "${bold}[ERROR]${normal} Please specify a correct AWS CLI profile name."
         exit 1
     else
         log "[OK] AWS CLI profile '$1' exists."
     fi
 }
 
-# Function to check if Hosted Zone ID exists
+# Check if Hosted Zone ID exists
 check_hosted_zone_id() {
     if ! aws route53 get-hosted-zone --id "$1" --profile "$SOURCE_PROFILE" &> /dev/null; then
-        log "[ERROR] Hosted Zone ID '$1' does not exist or an error occurred."
-        log "[ERROR] Please specify a correct Hosted Zone ID or verify the IAM permissions."
+        log "${bold}[ERROR]${normal} Hosted Zone ID '$1' does not exist or an error occurred."
+        log "${bold}[ERROR]${normal} Please specify a correct Hosted Zone ID or verify the IAM permissions."
         exit 1
     else
         log "[OK] Hosted Zone ID '$1' exists in the source account."
     fi
 }
 
-# Checking if HOSTED ZONE is public or private
+# Check if Hosted Zone is public or private
 check_private_hosted_zone() {
     HOSTED_ZONE_PRIVATE=$(aws --profile "$SOURCE_PROFILE" route53 get-hosted-zone --id "$1" --query 'HostedZone.Config.PrivateZone' --output text)
     if [ "$HOSTED_ZONE_PRIVATE" == "True" ]; then
@@ -57,7 +61,7 @@ check_hosted_zone_name() {
     if [ -z "$(aws --profile "$DEST_PROFILE" route53 list-hosted-zones --query "HostedZones[?Name=='$1'].Id" --output text)" ]; then
         log "[OK] Hosted Zone Name '$1' does not exist in the destination account."
     else
-        log "[ERROR] Hosted Zone Name '$1' already exists in the destination account."
+        log "${bold}[ERROR]${normal} Hosted Zone Name '$1' already exists in the destination account."
         exit 1
     fi
 }
@@ -66,11 +70,11 @@ check_dnssec() {
     #Check if DNSSEC is enabled on the hosted zone
         DNSSEC_STATUS=$(if [[ "$(aws --profile "$1" route53 get-dnssec --hosted-zone-id "$2" --query 'Status.ServeSignature' --output text)" == "SIGNING" ]]; then echo "ENABLED"; else echo "DISABLED"; fi)
         if [ "$DNSSEC_STATUS" == "ENABLED" ]; then
-            log "[WARNING] DNSSEC is enabled on the original hosted zone."
-            log "[WARNING] Reconfigure DNSSEC on the new hosted zone before switching the nameservers."
+            log "[WARNING] DNSSEC is enabled on the source hosted zone." 
+            log "[WARNING] ${bold}To ensure a smooth migration, first remove the DS record from the parent zone or registrar and allow sufficient time (e.g., 24 hours) for it to expire.${normal}"
             log "[WARNING] Please refer to: "
-            log "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-enable-signing.html"
-            log "https://aws.amazon.com/blogs/networking-and-content-delivery/configuring-dnssec-signing-and-validation-with-amazon-route-53/"
+            log "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec-disable.html"
+            log "https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring-dnssec.html"
         fi
 }
 
@@ -91,7 +95,7 @@ extract_and_convert_zone() {
 
     # Check if extraction was successful
     if [ $? -ne 0 ]; then
-        log "[ERROR] Failed to extract records from the source hosted zone."
+        log "${bold}[ERROR]${normal} Failed to extract records from the source hosted zone."
         exit 1
     fi
 
@@ -114,10 +118,10 @@ extract_and_convert_zone() {
     if echo "$CONVERTED_JSON" | jq -e '.Changes[].ResourceRecordSet.TrafficPolicyInstanceId | select(. != null)' > /dev/null 2>&1; then
         log "[INFO] Found traffic policy records, moving them into $WORK_DIR/$HOSTED_ZONE_ID/traffic_policy_records.json"
         echo "$CONVERTED_JSON" | jq '{ Changes: [.Changes[] | select(.ResourceRecordSet.TrafficPolicyInstanceId)] }' > "$WORK_DIR/$HOSTED_ZONE_ID/traffic_policy_records.json"
-        if [ $? -ne 0 ]; then echo "[ERROR] Failed to create traffic policy records file."; exit 1; else log "[OK] Traffic policy records file created."; fi
+        if [ $? -ne 0 ]; then echo "${bold}[ERROR]${normal} Failed to create traffic policy records file."; exit 1; else log "[OK] Traffic policy records file created."; fi
         log "[INFO] Removing traffic policy records from the original JSON file"
         CONVERTED_JSON=$(echo "$CONVERTED_JSON" | jq '.Changes |= map(select(.ResourceRecordSet.TrafficPolicyInstanceId | not))')
-        if [ $? -ne 0 ]; then echo "[ERROR] Failed to clean original JSON from traffic policy records."; exit 1; else log "[OK] Original JSON cleaned form traffic policy records."; fi
+        if [ $? -ne 0 ]; then echo "${bold}[ERROR]${normal} Failed to clean original JSON from traffic policy records."; exit 1; else log "[OK] Original JSON cleaned form traffic policy records."; fi
     fi
 
     # Log the number of records before migration
@@ -131,7 +135,7 @@ extract_and_convert_zone() {
             DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
             # Check if the new hosted zone was created successfully
             if [ $? -ne 0 ]; then
-                log "[ERROR] Failed to create the destination hosted zone."
+                log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
                 # Clean up - delete the destination hosted zone
                 aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
                 exit 1
@@ -139,7 +143,7 @@ extract_and_convert_zone() {
         else
             DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --vpc "VPCRegion=$HOSTED_ZONE_REGION,VPCId=$HOSTED_ZONE_VPC_ID" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
             if [ $? -ne 0 ]; then
-                log "[ERROR] Failed to create the destination hosted zone."
+                log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
                 # Clean up - delete the destination hosted zone
                 aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
                 exit 1
@@ -184,8 +188,8 @@ extract_and_convert_zone() {
                 #rm "$json_file"
             else
                 # Import failed
-                log "[ERROR] Failed to import records in the destination hosted zone."
-                log "[ERROR] Please check the log file $WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE for more details."
+                log "${bold}[ERROR]${normal} Failed to import records in the destination hosted zone."
+                log "${bold}[ERROR]${normal} Please check the log file $WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE for more details."
                 # Clean up - delete the destination hosted zone
                 aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
                 #rm "$json_file"
@@ -198,9 +202,9 @@ extract_and_convert_zone() {
         log "[INFO] New Hosted Zone ID: $NEW_HOSTED_ZONE_ID"
         log "[INFO] Record count: $NUM_RECORDS_AFTER"
         if [ "$NUM_RECORDS_AFTER" -ne "$NUM_RECORDS_BEFORE" ]; then
-            log "[ERROR] Number of records in the destination hosted zone does not match the original."
+            log "${bold}[ERROR]${normal} Number of records in the destination hosted zone does not match the original."
             # Clean up - delete the destination hosted zone
-            aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
+            # aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
             exit 1
         fi
         log "[INFO] Hosted zone migration completed successfully."
@@ -247,7 +251,7 @@ json_chunker() {
             echo "{ \"Changes\": $subset_records }" > "$WORK_DIR/$HOSTED_ZONE_ID/part_$j.json"
 
             if [ $? -ne 0 ] ; then
-                log "[ERROR] Error writing to file" 
+                log "${bold}[ERROR]${normal} Error writing to file" 
                 exit 1 
             else
                 if [ -n "$logmsg" ]; then 
