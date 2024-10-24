@@ -1,6 +1,6 @@
 # Amazon Route 53 Hosted Zone Migrator
 
-This script will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another one.
+This solution will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another one.
 It will follow all the needed steps published in the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html) regarding the migration of a hosted zone.
 
 ## Prerequisites
@@ -17,7 +17,7 @@ It will follow all the needed steps published in the [official AWS Route 53 docu
 
 <br/>
 
-## How the script works (step by step)
+## How the tool works (step by step)
 
 1. It exports original hosted zone records on a JSON file from the source AWS account
 
@@ -125,5 +125,7 @@ Inside, you'll locate both log files and the JSON file(s) generated and utilised
 4. **traffic_policy_records.json** (optional):  - traffic policy instance records which are removed from the import and saved on this file to refer/recreate them later
 
 <br/><br/>
+
+## Useful links
 
 For detailed instructions and examples, refer to the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html).
