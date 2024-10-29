@@ -9,10 +9,9 @@ This solution automates the migration of an AWS Route 53 hosted zone between AWS
    follow the [JQ Official Website](https://jqlang.github.io/jq/download/) to install or upgrade the 'jq' command.
 3. **Configure profiles for AWS CLI:**<br/>
    make sure AWS CLI is configured for both the source and destination AWS accounts.
-4. **Make sure you have the correct permissions in both accounts:**<br/>
-   follow the [Identity and access management in Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/auth-and-access-control.html) to know more.<br>
-   You can use the AmazonRoute53ReadOnlyAccess managed policy on the source account and the AmazonRoute53FullAccess managed policy in the destination account.<br>
-   If you are working on private hosted zones, you will also need to ensure the appropriate VPC-related permissions (such as AmazonVPCFullAccess) are available in the destination account to associate the private zone with a VPC.
+4. **Make sure you have the correct permissions in both accounts:**<br>
+   - You can use the AmazonRoute53ReadOnlyAccess managed policy on the source account and the AmazonRoute53FullAccess managed policy in the destination account.<br>
+   - If you are working on private hosted zones, you will also need to ensure the appropriate VPC-related permissions (such as AmazonVPCFullAccess) are available in the destination account to associate the private zone with a VPC.
 
 <br/>
 
@@ -23,8 +22,8 @@ This solution automates the migration of an AWS Route 53 hosted zone between AWS
 2. Creates the new empty hosted zone on the destination account
 
 3. Edits the exported JSON file with the required changes:
-   - removes original SOA and NS records because they are already present in the new hosted zone created in the destination account;
-   - moves all the ALIAS records at the end of the file;
+   - removes original [SOA and NS records](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/SOA-NSrecords.html) because they are already present in the new hosted zone created in the destination account;
+   - moves all the [ALIAS](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html) records at the end of the file;
    - replaces the old HostedZoneID in the ALIAS records which refer to other records in the same zone, with the new HostedZoneID;
    - removes any alias records that route traffic to a traffic policy instance. Writes the removed records into a JSON file so you can recreate them later.
 
@@ -32,10 +31,12 @@ This solution automates the migration of an AWS Route 53 hosted zone between AWS
    - DNS records are more than 1000;
    - the maximum combined length of the values in all Value elements is greater than 32,000 bytes.
 
-5. Imports all the JSON files in the new hosted zone on the AWS destination account
+5. Check DNSSEC configuration: if the original hosted zone has [DNSSEC](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-configure-dnssec.html#domain-configure-dnssec-how-it-works) enabled, the solution will notify you to disable it for safe migration.
 
-6. If the zone is public, prints the nameservers of the new hosted zone:
-   - to make the new hosted zone active, you have to set up the nameservers of the new hosted zone in the domain configuration.
+6. Imports all the JSON files in the new hosted zone on the AWS destination account
+
+7. If the zone is public, prints the nameservers of the new hosted zone:
+   - to make the new hosted zone active, you have to set up the [nameservers](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/GetInfoAboutHostedZone.html) of the new hosted zone in the domain configuration.
 
 <br/>
 
@@ -126,5 +127,19 @@ Inside, you'll locate both log files and the JSON file(s) generated and utilised
 <br/><br/>
 
 ## Useful links
+
+[AWS CLI User Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+
+[JQ Official Website](https://jqlang.github.io/jq/download/)
+
+[Identity and access management in Amazon Route 53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/auth-and-access-control.html)
+
+[SOA and NS records](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/SOA-NSrecords.html)
+
+[Alias records](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-choosing-alias-non-alias.html)
+
+[Nameservers](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/GetInfoAboutHostedZone.html)
+
+[DNSSEC](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-configure-dnssec.html#domain-configure-dnssec-how-it-works)
 
 For detailed instructions and examples, refer to the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html).
