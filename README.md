@@ -1,7 +1,6 @@
 # Amazon Route 53 Hosted Zone Migrator
 
-This solution will help you to automate the migration of an AWS Route 53 hosted zone from an AWS account to another one.
-It will follow all the needed steps published in the [official AWS Route 53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html) regarding the migration of a hosted zone.
+This solution automates the migration of an AWS Route 53 hosted zone between AWS accounts, following all necessary steps outlined in the official AWS Route 53 migration [documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/hosted-zones-migrating.html).
 
 ## Prerequisites
 1. **Install or Upgrade AWS CLI:**<br/>
