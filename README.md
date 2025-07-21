@@ -74,19 +74,19 @@ Example of normal execution:
 ********************************************************
 
 - Enter AWS CLI profile name for the source AWS account: source_accountA
-- Enter AWS CLI profile name for the destination AWS account: dest_accountB
+- Enter AWS CLI profile name for the destination AWS account: destination_accountB
 - Enter the Route 53 Hosted Zone ID to migrate: Z02526892************
 
 [ Tue Oct 22 14:58:20 CEST 2024 ] [INFO] Checking AWS CLI profiles...
 [ Tue Oct 22 14:58:26 CEST 2024 ] [OK] AWS CLI profile 'source_accountA' exists.
-[ Tue Oct 22 14:58:29 CEST 2024 ] [OK] AWS CLI profile 'dest_accountB' exists.
+[ Tue Oct 22 14:58:29 CEST 2024 ] [OK] AWS CLI profile 'destination_accountB' exists.
 [ Tue Oct 22 14:58:29 CEST 2024 ] [INFO] Checking Hosted Zone...
 [ Tue Oct 22 14:58:31 CEST 2024 ] [OK] Hosted Zone ID 'Z02526892************' exists in the source account.
 [ Tue Oct 22 14:58:31 CEST 2024 ] [INFO] Checking if Hosted Zone is public or private...
 [ Tue Oct 22 14:58:32 CEST 2024 ] [INFO] Hosted Zone is public.
 [ Tue Oct 22 14:58:35 CEST 2024 ] [INFO] Checking if Hosted Zone name already exists in the destination account...
 [ Tue Oct 22 14:58:37 CEST 2024 ] [OK] Hosted Zone Name 'test.aws.com.' does not exist in the destination account.
-[ Tue Oct 22 14:58:37 CEST 2024 ] -- STARTING MIGRATION FROM source_accountA to dest_accountB
+[ Tue Oct 22 14:58:37 CEST 2024 ] -- STARTING MIGRATION FROM source_accountA to destination_accountB
 [ Tue Oct 22 14:58:37 CEST 2024 ] [INFO] Hosted zone name: test.aws.com.
 [ Tue Oct 22 14:58:37 CEST 2024 ] [INFO] Records included: 1016
 [ Tue Oct 22 14:58:38 CEST 2024 ] [INFO] Limit of 999 records reached, splitting JSON: migrations/Z02526892************/part_1.json created.
