@@ -19,7 +19,7 @@ This solution automates the migration of an AWS Route 53 hosted zone between AWS
 
 1. It exports original hosted zone records on a JSON file from the source AWS account
 
-2. Creates the new empty hosted zone on the destination account
+2. Creates the new empty hosted zone on the destination account, unless `--no-create` option is provided
 
 3. Edits the exported JSON file with the required changes:
    - removes original [SOA and NS records](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/SOA-NSrecords.html) because they are already present in the new hosted zone created in the destination account;
@@ -54,12 +54,12 @@ If the hosted zone you want to import is "private", you will be asked for additi
 - the VPC ID to associate with the private hosted zone
 <br/>
 
-Dry run option:
+Dry run and no create option:
 
 ```
 % sh r53_migrator.sh --help
 
-Usage: r53_migrator.sh [--dry-run]
+Usage: r53_migrator.sh [--dry-run] [--no-create]
 
 %
 ```

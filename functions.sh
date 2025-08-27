@@ -57,13 +57,26 @@ check_private_hosted_zone() {
 }
 
 # Check if the hosted zone already exists in the destination account
+# Output found zone id of empty string
 check_hosted_zone_name() {
-    if [ -z "$(aws --profile "$DEST_PROFILE" route53 list-hosted-zones --query "HostedZones[?Name=='$1'].Id" --output text)" ]; then
-        log "[OK] Hosted Zone Name '$1' does not exist in the destination account."
-    else
-        log "${bold}[ERROR]${normal} Hosted Zone Name '$1' already exists in the destination account."
-        exit 1
+    DEST_ZONE_ID="$(aws --profile "$DEST_PROFILE" route53 list-hosted-zones --query "HostedZones[?Name=='$1'].Id" --output text)"
+    if [ -z "$DEST_ZONE_ID" ]; then
+        DEST_ZONE_EXISTS=true
+        if [ "$DEST_ZONE_EXISTS" == "$NOCREATE" ]; then
+            DEST_ZONE_ERROR_STATUS="[OK]"
+        else
+            DEST_ZONE_ERROR_STATUS="${bold}[ERROR]${normal}"
+        fi
+        if [ "$DEST_ZONE_EXISTS" == "true" ]; then
+            log "${DEST_ZONE_ERROR_STATUS} Hosted Zone Name '$1' does not exist in the destination account."
+        else
+            log "${DEST_ZONE_ERROR_STATUS} Hosted Zone Name '$1' already exists in the destination account."
+        fi
+        if [ "DEST_ZONE_ERROR_STATUS" != "[OK]" ]; then
+            exit 1
+        fi
     fi
+    echo -n "$DEST_ZONE_ID"
 }
 
 check_dnssec() {
@@ -101,7 +114,7 @@ extract_and_convert_zone() {
 
     # Check if the hosted zone name already exists in the destination account
     log "[INFO] Checking if Hosted Zone name already exists in the destination account..."
-    check_hosted_zone_name "$HOSTED_ZONE_NAME"
+    DEST_HOSTED_ZONE_ID="$(check_hosted_zone_name "$HOSTED_ZONE_NAME")"
 
     if [ "$DRYRUN" != "true" ]; then
         log "-- STARTING MIGRATION FROM $SOURCE_PROFILE to $DEST_PROFILE"
@@ -130,23 +143,25 @@ extract_and_convert_zone() {
 
     if [ "$DRYRUN" != "true" ]; then
 
-        # Create the new hosted zone in the destination AWS account
-        if [ "$HOSTED_ZONE_PRIVATE" == "False" ]; then
-            DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
-            # Check if the new hosted zone was created successfully
-            if [ $? -ne 0 ]; then
-                log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
-                # Clean up - delete the destination hosted zone
-                aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
-                exit 1
-            fi
-        else
-            DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --vpc "VPCRegion=$HOSTED_ZONE_REGION,VPCId=$HOSTED_ZONE_VPC_ID" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
-            if [ $? -ne 0 ]; then
-                log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
-                # Clean up - delete the destination hosted zone
-                aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
-                exit 1
+        if [ -z "$DEST_HOSTED_ZONE_ID" ]; then
+            # Create the new hosted zone in the destination AWS account
+            if [ "$HOSTED_ZONE_PRIVATE" == "False" ]; then
+                DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
+                # Check if the new hosted zone was created successfully
+                if [ $? -ne 0 ]; then
+                    log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
+                    # Clean up - delete the destination hosted zone
+                    aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
+                    exit 1
+                fi
+            else
+                DEST_HOSTED_ZONE_ID=$(aws --profile "$DEST_PROFILE" route53 create-hosted-zone --name "$HOSTED_ZONE_NAME" --caller-reference "$(date +%s)" --vpc "VPCRegion=$HOSTED_ZONE_REGION,VPCId=$HOSTED_ZONE_VPC_ID" --hosted-zone-config Comment="Migrated from $HOSTED_ZONE_ID" --query 'HostedZone.Id' --output text)
+                if [ $? -ne 0 ]; then
+                    log "${bold}[ERROR]${normal} Failed to create the destination hosted zone."
+                    # Clean up - delete the destination hosted zone
+                    aws --profile "$DEST_PROFILE" route53 delete-hosted-zone --id "$DEST_HOSTED_ZONE_ID" > /dev/null 2>&1
+                    exit 1
+                fi
             fi
         fi
     

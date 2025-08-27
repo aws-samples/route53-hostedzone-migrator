@@ -7,14 +7,19 @@
 . ./config
 . ./functions.sh
 
+export NOCREATE=false
+
 if [ "$#" -gt 0 ]; then
     case "$1" in
         --dry-run)
             export DRYRUN="true"
             ;;
+        --no-create)
+            export NOCREATE="true"
+            ;;
         --help)
             echo ""
-            echo "Usage: $0 [--dry-run]"
+            echo "Usage: $0 [--dry-run] [--no-create]"
             echo ""
             exit 1
             ;;
@@ -22,7 +27,7 @@ if [ "$#" -gt 0 ]; then
             echo ""
             echo "[ERROR] Unknown argument '$1'"
             echo ""
-            echo "Usage: $0 [--dry-run]"
+            echo "Usage: $0 [--dry-run] [--no-create]"
             echo ""
             exit 1
             ;;
@@ -59,6 +64,9 @@ echo "" >> "$WORK_DIR/$HOSTED_ZONE_ID/$LOG_FILE"
 
 # Log dry-run execution
 if [ "$DRYRUN" == "true" ]; then log "[INFO] Dry-run execution enabled"; fi
+
+# Log no-create execution
+if [ "$NOCREATE" == "true" ]; then log "[INFO] Target zone won't be created"; fi
 
 # Checking if specified AWS CLI profile are correct
 log "[INFO] Checking AWS CLI profiles..."
